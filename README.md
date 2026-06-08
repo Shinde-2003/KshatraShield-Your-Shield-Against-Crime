@@ -9,32 +9,40 @@ The platform enables users to report crimes using text, voice, images, videos, a
 
 
 USER REGISTRATION 
+
 <img width="749" height="626" alt="image" src="https://github.com/user-attachments/assets/2a108b74-1db9-4310-a1b5-644d36eeee47" />
 
 
 USER LOGIN
+
 <img width="619" height="665" alt="image" src="https://github.com/user-attachments/assets/664ad3c7-51f6-4c2b-ad5c-fb9825bbeb9c" />
 
 
 USER INTERFACE
+
 <img width="619" height="494" alt="image" src="https://github.com/user-attachments/assets/9fd5ed41-c4b1-4ad5-a2ce-5ba174d26f1b" />
 
 
 CRIME ANALYSIS
+
 <img width="621" height="596" alt="image" src="https://github.com/user-attachments/assets/d7ce6cbc-cf52-4c46-a7c9-0103ded9a091" />
 
 
 LIVE-CRIME CAPTURE 
+
 <img width="515" height="671" alt="image" src="https://github.com/user-attachments/assets/6a542341-c24e-477f-8471-fb80a544cd00" />
 
 
 OVERVIEW AND CRIME REPORTING PAGE
+
 <img width="560" height="459" alt="image" src="https://github.com/user-attachments/assets/37ee8120-bc20-4b7d-9646-64c6d5dd5653" />
+
 
 <img width="552" height="489" alt="image" src="https://github.com/user-attachments/assets/02ef5a42-72bb-49e5-84ac-1bb05ef9992c" />
 
 
 DATABASE 
+
 <img width="697" height="375" alt="image" src="https://github.com/user-attachments/assets/4094c6d2-be32-40ea-8d16-809218cb4ee8" />
 
 
