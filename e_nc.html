@@ -1,0 +1,17 @@
+{% extends "report_crime.html" %}
+{% block title %}E-NC{% endblock %}
+{% block scripts %}
+{{ super() }}
+<script>
+    const h2 = document.querySelector('h2');
+    h2.setAttribute('data-i18n', 'e_nc_title');
+    h2.innerHTML = '<i class="fas fa-clipboard-list"></i> ' + translations[currentLang].e_nc_title;
+    document.getElementById('type').value = 'E-NC';
+    document.getElementById('type').disabled = true;
+    
+    if (!isLoggedIn()) {
+        notify('You MUST be logged in to file an E-NC.', 'danger');
+        setTimeout(() => window.location.href = '/login', 2500);
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div style="max-width: 420px; margin: 100px auto; padding: 40px;" class="glass">
+        <div id="login-form-div">
+            <h2 style="text-align: center; margin-bottom: 25px; color: var(--accent-color); font-size: 2rem;" data-i18n="user_login">User Login</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label data-i18n="email_addr">Email Address</label>
+                    <input type="email" id="email" required placeholder="email@example.com" data-i18n="placeholder_email">
+                </div>
+                <div class="form-group">
+                    <label data-i18n="password_lbl">Password</label>
+                    <input type="password" id="password" required placeholder="Enter your password" data-i18n="placeholder_pass">
+                </div>
+                <button type="submit" id="loginBtn" class="btn btn-primary" style="width: 100%;" data-i18n="continue_otp">Continue to Secure OTP</button>
+            </form>
+        </div>
+
+        <div id="otp-form-div" style="display: none;">
+            <h2 style="text-align: center; margin-bottom: 15px; color: var(--success-color);" data-i18n="verify_otp">Verify OTP</h2>
+            <p style="text-align: center; color: var(--text-color); font-size: 0.9rem; margin-bottom: 20px;" data-i18n="otp_msg">
+                A 6-digit code has been sent to your registered number: <br>
+                <strong id="target-phone" style="color: var(--accent-color); font-size: 1.1rem;">+91 ******XXXX</strong>
+            </p>
+            <form id="otpForm" style="margin-top: 20px;">
+                <div class="form-group">
+                    <label data-i18n="enter_otp">Enter 6-digit OTP</label>
+                    <input type="text" id="otp" required maxlength="6" style="text-align: center; font-size: 1.5rem; letter-spacing: 5px;">
+                </div>
+                <button type="submit" class="btn btn-success" style="width: 100%;" data-i18n="verify_login_btn">Verify & Login</button>
+            </form>
+        </div>
+
+        <p style="text-align: center; margin-top: 20px;">
+            <span data-i18n="no_account">Don't have an account?</span> <a href="/register" data-i18n="register_here">Register here</a>
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let userEmail = '';
+
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    userEmail = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+
+    try {
+        const loginBtn = document.getElementById('loginBtn');
+        loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+        loginBtn.disabled = true;
+
+        const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: userEmail, password: password })
+        });
+        const result = await res.json();
+        if (res.ok) {
+            document.getElementById('login-form-div').style.display = 'none';
+            document.getElementById('otp-form-div').style.display = 'block';
+            document.getElementById('target-phone').innerText = result.phone || '+91 XXXXXXXX';
+            
+            // Trigger Virtual SMS Simulator
+            if (typeof showSms === 'function') {
+                showSms(`KshatraShield: Your login verification code is 123456. DO NOT share this with anyone.`);
+            }
+            
+            notify('2FA: Verification code sent to your registered phone.', 'success');
+        } else {
+            notify(result.error, 'danger');
+            loginBtn.innerHTML = 'Continue to Secure OTP';
+            loginBtn.disabled = false;
+        }
+    } catch (err) {
+        notify('Login failed', 'danger');
+    }
+});
+
+document.getElementById('otpForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const otp = document.getElementById('otp').value;
+
+    try {
+        const res = await fetch('/api/auth/verify-otp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: userEmail, otp: otp })
+        });
+        const result = await res.json();
+        if (res.ok) {
+            localStorage.setItem('ks_token', result.token);
+            localStorage.setItem('ks_user_role', result.role);
+            localStorage.setItem('ks_user_name', result.name);
+            notify('Login successful!', 'success');
+            
+            setTimeout(() => {
+                if (result.role === 'police') {
+                    window.location.href = '/police/dashboard';
+                } else {
+                    window.location.href = '/';
+                }
+            }, 1000);
+        } else {
+            notify(result.error, 'danger');
+        }
+    } catch (err) {
+        notify('Verification failed', 'danger');
+    }
+});
+</script>
+{% endblock %}

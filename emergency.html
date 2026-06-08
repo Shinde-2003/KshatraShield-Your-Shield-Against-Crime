@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Emergency Services{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div style="margin: 50px 0; text-align: center;">
+        <h2 data-i18n="emergency_assistance">Emergency Assistance</h2>
+        <p style="color: var(--muted-color); font-size: 1.1rem;" data-i18n="emergency_desc">In case of immediate danger, use the buttons below to contact emergency services.</p>
+    </div>
+
+    <div class="feature-grid">
+        <div class="glass feature-card" style="border-top: 4px solid var(--error-color);">
+            <i class="fas fa-shield-alt" style="color: var(--error-color);"></i>
+            <h3 data-i18n="police_h3">POLICE</h3>
+            <p data-i18n="police_desc">For immediate police assistance or to report ongoing crime.</p>
+            <a href="tel:100" class="btn btn-danger" style="width: 100%; font-size: 1.5rem; margin-top: 15px;" data-i18n="call_100">Call 100</a>
+        </div>
+        
+        <div class="glass feature-card" style="border-top: 4px solid #fff;">
+            <i class="fas fa-ambulance" style="color: #fff;"></i>
+            <h3 data-i18n="ambulance_h3">AMBULANCE</h3>
+            <p data-i18n="ambulance_desc">For medical emergencies and urgent health concerns.</p>
+            <a href="tel:108" class="btn btn-primary" style="width: 100%; font-size: 1.5rem; margin-top: 15px; background: #fff; color: #000;" data-i18n="call_108">Call 108</a>
+        </div>
+
+        <div class="glass feature-card" style="border-top: 4px solid var(--warning-color);">
+            <i class="fas fa-fire-extinguisher" style="color: var(--warning-color);"></i>
+            <h3 data-i18n="fire_h3">FIRE BRIGADE</h3>
+            <p data-i18n="fire_desc">For fire incidents, gas leaks, or rescue operations.</p>
+            <a href="tel:101" class="btn btn-primary" style="width: 100%; font-size: 1.5rem; margin-top: 15px; background: var(--warning-color);" data-i18n="call_101">Call 101</a>
+        </div>
+
+        <div class="glass feature-card" style="border-top: 4px solid #ff00ff;">
+            <i class="fas fa-female" style="color: #ff00ff;"></i>
+            <h3 data-i18n="women_helpline_h3">WOMEN HELPLINE</h3>
+            <p data-i18n="women_helpline_desc">Safety and assistance for women in distress.</p>
+            <a href="tel:1091" class="btn btn-primary" style="width: 100%; font-size: 1.5rem; margin-top: 15px; background: #ff00ff;" data-i18n="call_1091">Call 1091</a>
+        </div>
+    </div>
+
+    <div class="glass" style="padding: 30px; margin-top: 20px;">
+        <h3 data-i18n="nearby_contacts">Nearby Emergency Contacts</h3>
+        <ul style="list-style: none; margin-top: 15px;">
+            <li style="padding: 10px 0; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between;">
+                <span>City Main Police Station</span>
+                <a href="tel:0221234567" style="color: var(--accent-color);">022-1234567</a>
+            </li>
+            <li style="padding: 10px 0; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between;">
+                <span>Disaster Management Cell</span>
+                <a href="tel:108" style="color: var(--accent-color);">108</a>
+            </li>
+            <li style="padding: 10px 0; display: flex; justify-content: space-between;">
+                <span>Child Helpline</span>
+                <a href="tel:1098" style="color: var(--accent-color);">1098</a>
+            </li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

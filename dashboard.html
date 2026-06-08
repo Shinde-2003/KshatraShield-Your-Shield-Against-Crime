@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+
+{% block title %}Police Dashboard{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 1400px;">
+    <div style="margin: 30px 0; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h2 data-i18n="police_dash_title"><i class="fas fa-tachometer-alt"></i> Live Monitoring Dashboard</h2>
+            <p id="stats-summary" style="color: var(--muted-color);" data-i18n="loading_complaints">Loading incoming complaints...</p>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <button class="btn btn-primary" onclick="loadComplaints()"><i class="fas fa-sync"></i> <span data-i18n="refresh_btn">Refresh</span></button>
+            <button class="btn btn-danger" onclick="logout()" data-i18n="exit_btn">Exit</button>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="glass" style="padding: 20px; margin-bottom: 25px; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+        <select id="filter-status">
+            <option value="" data-i18n="all_statuses">All Statuses</option>
+            <option value="Pending" data-i18n="pending">Pending</option>
+            <option value="In Progress" data-i18n="in_progress">In Progress</option>
+            <option value="Resolved" data-i18n="resolved">Resolved</option>
+        </select>
+        <select id="filter-priority">
+            <option value="" data-i18n="all_priorities">All Priorities</option>
+            <option value="Critical" data-i18n="critical">Critical</option>
+            <option value="High" data-i18n="high">High</option>
+            <option value="Medium" data-i18n="medium">Medium</option>
+            <option value="Low" data-i18n="low">Low</option>
+        </select>
+        <input type="text" id="filter-location" placeholder="Filter by Area" data-i18n="placeholder_area">
+        <button class="btn btn-primary" onclick="loadComplaints()" data-i18n="apply_filters">Apply Filters</button>
+    </div>
+
+    <!-- Main Table -->
+    <div class="glass" style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+            <thead style="background: var(--secondary-color); border-bottom: 2px solid var(--border-color);">
+                <tr>
+                    <th style="padding: 15px;" data-i18n="id_header">ID</th>
+                    <th style="padding: 15px;" data-i18n="incident_header">Incident</th>
+                    <th style="padding: 15px;" data-i18n="ai_cat_header">AI Category</th>
+                    <th style="padding: 15px;" data-i18n="priority_header">Priority</th>
+                    <th style="padding: 15px;" data-i18n="reporter_header">Reporter</th>
+                    <th style="padding: 15px;" data-i18n="status_header">Status</th>
+                    <th style="padding: 15px;" data-i18n="action_header">Action</th>
+                </tr>
+            </thead>
+            <tbody id="complaints-body">
+                <!-- Rows injected here -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Status Update Modal -->
+<div id="status-modal" class="glass" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 400px; z-index: 3000; padding: 30px;">
+    <h3 data-i18n="update_status_title">Update Status</h3>
+    <p id="target-complaint" style="color: var(--accent-color); font-weight: bold; margin: 10px 0;"></p>
+    <div class="form-group">
+        <label data-i18n="new_status_lbl">New Status</label>
+        <select id="new-status">
+            <option value="Pending" data-i18n="pending">Pending</option>
+            <option value="In Progress" data-i18n="in_progress">In Progress</option>
+            <option value="Resolved" data-i18n="resolved">Resolved</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label data-i18n="officer_comment_lbl">Officer Comment</label>
+        <textarea id="officer-comment" rows="3" placeholder="Action taken or reason for update" data-i18n="placeholder_comment"></textarea>
+    </div>
+    <div style="display: flex; gap: 10px;">
+        <button class="btn btn-success" style="flex: 1;" onclick="submitStatusUpdate()" data-i18n="update_btn">Update</button>
+        <button class="btn btn-danger" style="flex: 1;" onclick="closePoliceModal()" data-i18n="cancel_btn">Cancel</button>
+    </div>
+</div>
+<div id="police-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2500;" onclick="closePoliceModal()"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentTargetId = '';
+
+async function checkAuth() {
+    if (!isLoggedIn() || localStorage.getItem('ks_user_role') !== 'police') {
+        window.location.href = '/police/login';
+    }
+}
+
+async function loadStats() {
+    try {
+        const res = await fetch('/api/police/stats/summary', {
+            headers: { 'Authorization': `Bearer ${getToken()}` }
+        });
+        const stats = await res.json();
+        const t = translations[currentLang];
+        document.getElementById('stats-summary').innerText = 
+            `${t.total_lbl}: ${stats.total} | ${t.pending}: ${stats.pending} | ${t.in_progress}: ${stats.in_progress} | ${t.resolved}: ${stats.resolved}`;
+        document.getElementById('stats-summary').removeAttribute('data-i18n'); // Handled manually
+    } catch (err) {}
+}
+
+async function loadComplaints() {
+    const status = document.getElementById('filter-status').value;
+    const priority = document.getElementById('filter-priority').value;
+    const location = document.getElementById('filter-location').value;
+    
+    let url = `/api/police/complaints?status=${status}&priority=${priority}&location=${location}`;
+
+    try {
+        const res = await fetch(url, {
+            headers: { 'Authorization': `Bearer ${getToken()}` }
+        });
+        const complaints = await res.json();
+        const body = document.getElementById('complaints-body');
+        const t = translations[currentLang];
+        body.innerHTML = complaints.map(c => `
+            <tr style="border-bottom: 1px solid var(--border-color);">
+                <td style="padding: 15px; font-weight: bold; color: var(--accent-color);">${c.complaint_id}</td>
+                <td style="padding: 15px;">
+                    <div>${c.title}</div>
+                    <div style="font-size: 0.75rem; color: var(--muted-color);">
+                        <a href="${getMapLink(c.location)}" target="_blank" style="color: var(--accent-color); text-decoration: none;">
+                            <i class="fas fa-map-marker-alt"></i> ${c.location}
+                        </a> | ${new Date(c.created_at).toLocaleString()}
+                    </div>
+                </td>
+                <td style="padding: 15px;">${t[c.category.toLowerCase()] || c.category.toUpperCase()}</td>
+                <td style="padding: 15px;">
+                    <span style="color: ${getPriorityColor(c.priority)}; font-weight: bold;">${t[c.priority.toLowerCase()] || c.priority}</span>
+                </td>
+                <td style="padding: 15px;">${c.reporter === 'Anonymous' ? '<i class="fas fa-user-secret"></i>' : c.reporter.substring(0,8)}</td>
+                <td style="padding: 15px;">
+                    <span class="status-badge" style="background: ${getStatusColor(c.status)}; color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem;">
+                        ${t[c.status.toLowerCase().replace(' ', '_')] || c.status}
+                    </span>
+                </td>
+                <td style="padding: 15px;">
+                    <button class="btn btn-primary" onclick="openStatusUpdate('${c.complaint_id}', '${c.status}')" style="padding: 5px 10px; font-size: 0.8rem;" data-i18n="update_btn">
+                        ${t.update_btn}
+                    </button>
+                    ${c.evidence.length > 0 ? `
+                        <a href="${c.evidence[0]}" target="_blank" class="btn btn-muted" style="padding: 5px 10px; font-size: 0.8rem; border: 1px solid var(--border-color);" data-i18n="media_btn">
+                            ${t.media_btn}
+                        </a>
+                    ` : ''}
+                </td>
+            </tr>
+        `).join('');
+
+        loadStats();
+        updateUI(); // Ensure any static i18n in JS template literals are updated if they were added
+    } catch (err) {
+        notify('Failed to load complaints', 'danger');
+    }
+}
+
+function getPriorityColor(p) {
+    if (p === 'Critical') return 'var(--error-color)';
+    if (p === 'High') return '#f97316';
+    if (p === 'Medium') return 'var(--warning-color)';
+    return 'var(--success-color)';
+}
+
+function getStatusColor(status) {
+    if (status === 'Pending') return 'var(--warning-color)';
+    if (status === 'In Progress') return 'var(--accent-color)';
+    if (status === 'Resolved') return 'var(--success-color)';
+    return '#666';
+}
+
+function openStatusUpdate(id, current) {
+    currentTargetId = id;
+    document.getElementById('target-complaint').innerText = id;
+    document.getElementById('new-status').value = current;
+    document.getElementById('status-modal').style.display = 'block';
+    document.getElementById('police-overlay').style.display = 'block';
+}
+
+function closePoliceModal() {
+    document.getElementById('status-modal').style.display = 'none';
+    document.getElementById('police-overlay').style.display = 'none';
+}
+
+async function submitStatusUpdate() {
+    const status = document.getElementById('new-status').value;
+    const comment = document.getElementById('officer-comment').value;
+
+    try {
+        const res = await fetch(`/api/police/complaints/${currentTargetId}/status`, {
+            method: 'PUT',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${getToken()}`
+            },
+            body: JSON.stringify({ status, comment })
+        });
+
+        if (res.ok) {
+            notify('Status updated!', 'success');
+            closePoliceModal();
+            loadComplaints();
+        } else {
+            notify('Update failed', 'danger');
+        }
+    } catch (err) {
+        notify('Error connecting to server', 'danger');
+    }
+}
+
+window.addEventListener('languageChanged', () => {
+    loadComplaints();
+});
+
+checkAuth();
+loadComplaints();
+</script>
+{% endblock %}

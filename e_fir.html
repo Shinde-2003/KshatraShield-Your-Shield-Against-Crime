@@ -1,0 +1,17 @@
+{% extends "report_crime.html" %}
+{% block title %}E-FIR{% endblock %}
+{% block scripts %}
+{{ super() }}
+<script>
+    const h2 = document.querySelector('h2');
+    h2.setAttribute('data-i18n', 'e_fir_title');
+    h2.innerHTML = '<i class="fas fa-file-signature"></i> ' + translations[currentLang].e_fir_title;
+    document.getElementById('type').value = 'E-FIR';
+    document.getElementById('type').disabled = true;
+    
+    if (!isLoggedIn()) {
+        notify('You MUST be logged in to file an E-FIR for legal reasons.', 'danger');
+        setTimeout(() => window.location.href = '/login', 2500);
+    }
+</script>
+{% endblock %}

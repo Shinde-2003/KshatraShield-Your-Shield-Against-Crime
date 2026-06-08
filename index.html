@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div style="text-align: center; margin-bottom: 60px; padding-top: 40px;">
+        <h1 data-i18n="title" style="font-size: 3.5rem; text-shadow: 0 0 20px rgba(102, 252, 241, 0.4); margin-bottom: 0.5rem;">KshatraShield</h1>
+        <p style="font-size: 1.25rem; color: var(--accent-color); font-weight: 600; letter-spacing: 1px; text-transform: uppercase;" data-i18n="slogan">Your Shield Against Crime</p>
+    </div>
+
+    <div class="feature-grid">
+        <a href="/report-crime" class="feature-card glass" data-tooltip="Submit a formal police complaint with detailed evidence and descriptions.">
+            <i class="fas fa-file-alt"></i>
+            <h3 data-i18n="report_crime">Report Crime</h3>
+            <p data-i18n="feature_report_p">File a standard police complaint with evidence.</p>
+        </a>
+        <a href="/live-capture" class="feature-card glass" data-tooltip="Instantly record video, photos, or audio of an active incident for immediate reporting.">
+            <i class="fas fa-camera"></i>
+            <h3 data-i18n="live_capture">Live Crime Capture</h3>
+            <p data-i18n="feature_live_p">Capture real-time video, image, or audio.</p>
+        </a>
+        <a href="/e-fir" class="feature-card glass" data-tooltip="Register a First Information Report electronically for cognizable offenses.">
+            <i class="fas fa-file-signature"></i>
+            <h3 data-i18n="e_fir">E-FIR</h3>
+            <p data-i18n="feature_fir_p">Electronic First Information Report system.</p>
+        </a>
+        <a href="/e-nc" class="feature-card glass" data-tooltip="Report Non-Cognizable offenses that don't require immediate arrest.">
+            <i class="fas fa-clipboard-list"></i>
+            <h3 data-i18n="e_nc">E-NC</h3>
+            <p data-i18n="feature_nc_p">Report Non-Cognizable offenses online.</p>
+        </a>
+        <a href="/anonymous-report" class="feature-card glass" data-tooltip="Report sensitive issues like harassment without revealing your identity.">
+            <i class="fas fa-user-secret"></i>
+            <h3 data-i18n="anonymous">Report Anonymously</h3>
+            <p data-i18n="feature_anon_p">Report harassment or abuse without identity.</p>
+        </a>
+        <a href="/my-reports" class="feature-card glass" data-tooltip="Check the real-time status and investigation updates of your filed complaints.">
+            <i class="fas fa-folder-open"></i>
+            <h3 data-i18n="my_reports">My Reports</h3>
+            <p data-i18n="feature_my_p">Track status and updates on your complaints.</p>
+        </a>
+        <a href="/crime-analysis" class="feature-card glass" data-tooltip="View AI-driven insights, danger zones, and crime trends in your area.">
+            <i class="fas fa-chart-pie"></i>
+            <h3 data-i18n="analysis">Crime Analysis</h3>
+            <p data-i18n="feature_analysis_p">View AI-powered crime trends and heatmaps.</p>
+        </a>
+        <a href="/emergency" class="feature-card glass" data-tooltip="Quickly contact police, ambulance, or fire services in case of urgent need.">
+            <i class="fas fa-phone-square-alt"></i>
+            <h3 data-i18n="emergency">Emergency Services</h3>
+            <p data-i18n="feature_emergency_p">Quick access to police, ambulance, and fire.</p>
+        </a>
+    </div>
+</div>
+{% endblock %}

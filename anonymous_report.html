@@ -1,0 +1,28 @@
+{% extends "report_crime.html" %}
+
+{% block title %}Anonymous Report{% endblock %}
+
+{% block head %}
+<style>
+    #reportForm { border-top: 2px solid var(--accent-color); }
+</style>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    // Specific logic for anonymous report
+    const h2 = document.querySelector('h2');
+    h2.setAttribute('data-i18n', 'anon_report_title');
+    h2.innerHTML = '<i class="fas fa-user-secret"></i> ' + translations[currentLang].anon_report_title;
+    document.getElementById('type').value = 'Standard';
+    document.getElementById('type').disabled = true;
+    
+    // Override submit to force anonymous even if logged in if they want
+    const form = document.getElementById('reportForm');
+    const originalSubmit = form.onsubmit;
+    
+    // The parent script handles it well, but we can add an advice
+    notify('Identity protection is active. No personal data will be linked to this report.', 'info');
+</script>
+{% endblock %}

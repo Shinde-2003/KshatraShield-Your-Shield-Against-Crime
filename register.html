@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Register{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div style="max-width: 500px; margin: 50px auto; padding: 30px;" class="glass">
+        <h2 style="text-align: center;" data-i18n="register_title">Join KshatraShield</h2>
+        <form id="regGroup">
+            <div class="form-group">
+                <label data-i18n="full_name">Full Name</label>
+                <input type="text" id="name" required placeholder="Enter your full name" data-i18n="placeholder_name">
+            </div>
+            <div class="form-group">
+                <label data-i18n="email_addr">Email Address</label>
+                <input type="email" id="email" required placeholder="email@example.com" data-i18n="placeholder_email">
+            </div>
+            <div class="form-group">
+                <label data-i18n="phone_num">Phone Number</label>
+                <input type="tel" id="phone" required placeholder="+91 XXXX XXX XXX" data-i18n="placeholder_phone">
+            </div>
+            <div class="form-group">
+                <label data-i18n="password_lbl">Password</label>
+                <input type="password" id="password" required placeholder="Create a strong password" data-i18n="placeholder_pass_create">
+            </div>
+            <div class="form-group">
+                <label data-i18n="id_proof_type">ID Proof Type</label>
+                <select id="id_type">
+                    <option value="Aadhaar" data-i18n="aadhaar">Aadhaar Card</option>
+                    <option value="PAN" data-i18n="pan">PAN Card</option>
+                    <option value="VoterID" data-i18n="voter_id">Voter ID</option>
+                    <option value="Passport" data-i18n="passport">Passport</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label data-i18n="id_number">ID Number</label>
+                <input type="text" id="id_number" required placeholder="Enter ID number" data-i18n="placeholder_id">
+            </div>
+            <div class="form-group">
+                <label data-i18n="police_code_lbl">Police Admin Code (Optional)</label>
+                <input type="text" id="police_code" placeholder="Enter only if registering as Police" data-i18n="placeholder_police_code">
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;" data-i18n="register_btn">Create Account</button>
+        </form>
+        <p style="text-align: center; margin-top: 20px;">
+            <span data-i18n="already_account">Already have an account?</span> <a href="/login" data-i18n="login_here">Login here</a>
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('regGroup').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const data = {
+        name: document.getElementById('name').value,
+        email: document.getElementById('email').value,
+        phone: document.getElementById('phone').value,
+        password: document.getElementById('password').value,
+        id_type: document.getElementById('id_type').value,
+        id_number: document.getElementById('id_number').value,
+        police_code: document.getElementById('police_code').value
+    };
+
+    try {
+        const res = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        if (res.ok) {
+            notify('Registration successful!', 'success');
+            setTimeout(() => window.location.href = '/login', 1500);
+        } else {
+            notify(result.error, 'danger');
+        }
+    } catch (err) {
+        notify('Connection failed', 'danger');
+    }
+});
+</script>
+{% endblock %}

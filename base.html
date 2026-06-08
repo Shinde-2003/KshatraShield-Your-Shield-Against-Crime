@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KshatraShield - {% block title %}{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --font-main: 'Outfit', sans-serif; }
+    </style>
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <div class="emergency-banner">
+        <div class="container">
+            <div class="emergency-links">
+                <span data-i18n="emergency_lbl"><i class="fas fa-phone-alt"></i> EMERGENCY:</span>
+                <a href="tel:100" data-i18n="police">POLICE (100)</a>
+                <a href="tel:108" data-i18n="ambulance">AMBULANCE (108)</a>
+                <a href="tel:101" data-i18n="fire">FIRE (101)</a>
+            </div>
+        </div>
+    </div>
+
+    <nav>
+        <div class="container nav-content">
+            <a href="/" class="logo">
+                <i class="fas fa-shield-alt"></i> KshatraShield
+            </a>
+            <ul class="nav-links" id="nav-links">
+                <li><a href="/" data-i18n="home">Home</a></li>
+                <li><a href="/report-crime" data-i18n="report_crime">Report Crime</a></li>
+                <li id="notification-bell-li" style="display: none; position: relative;">
+                    <a href="#" id="notif-btn" onclick="toggleNotifs(event)"><i class="fas fa-bell"></i><span id="notif-count" style="position: absolute; top: -5px; right: -5px; background: var(--error-color); color: #fff; font-size: 0.7rem; padding: 2px 6px; border-radius: 10px; display: none; font-weight: 800; box-shadow: 0 0 10px rgba(255, 23, 68, 0.5);">0</span></a>
+                    <div id="notif-tray" class="glass" style="display: none; position: absolute; top: 100%; right: 0; width: 300px; max-height: 400px; overflow-y: auto; z-index: 2001; padding: 15px; margin-top: 10px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 10px;">
+                            <h4 style="margin: 0; font-size: 0.9rem;">Notifications</h4>
+                            <button onclick="clearNotifs()" style="background: none; border: none; color: var(--muted-color); cursor: pointer; font-size: 0.75rem;">Clear All</button>
+                        </div>
+                        <div id="notif-items">
+                            <p style="text-align: center; color: var(--muted-color); font-size: 0.8rem; padding: 10px;">No new alerts.</p>
+                        </div>
+                    </div>
+                </li>
+                <li><a href="/crime-analysis" data-i18n="analysis">Analysis</a></li>
+                <li id="my-reports-nav" style="display: none;"><a href="/my-reports" data-i18n="my_reports">My Reports</a></li>
+                <li id="auth-links">
+                    <a href="/login" class="btn btn-primary" data-tooltip="Securely access your account with 2FA" data-i18n="login_btn">Login</a>
+                </li>
+<li>
+    <select id="lang-select" onchange="setLanguage(this.value)" class="nav-select">
+                        <option value="en">EN</option>
+                        <option value="hi">HI</option>
+                        <option value="mr">MR</option>
+                    </select>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="notifications-container" id="notifications-container"></div>
+
+    <!-- Virtual SMS Simulator -->
+    <div id="sms-simulator" class="glass" style="display: none; position: fixed; bottom: 80px; right: 20px; width: 280px; height: 180px; z-index: 3000; border: 2px solid var(--accent-color); border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.8);">
+        <div style="background: var(--secondary-color); padding: 10px; font-size: 0.7rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color);">
+            <span><i class="fas fa-signal"></i> 5G | <i class="fas fa-battery-full"></i></span>
+            <span id="sms-time">12:00</span>
+        </div>
+        <div style="padding: 15px;">
+            <p style="font-size: 0.6rem; color: var(--muted-color); text-transform: uppercase; margin-bottom: 5px;">New Message from KshatraShield</p>
+            <p id="sms-message" style="font-size: 0.85rem; font-weight: 500;"></p>
+        </div>
+        <button onclick="closeSms()" style="position: absolute; bottom: 10px; right: 10px; background: var(--accent-color); color: #fff; border: none; padding: 5px 10px; border-radius: 10px; font-size: 0.7rem; cursor: pointer;">Dismiss</button>
+    </div>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <div class="news-ticker">
+        <div class="ticker-wrap">
+            <div class="ticker">
+                <span class="ticker-item" data-i18n="news">KshatraShield: Safe City Initiative launched. | Report any suspicious activity immediately. | Dial 100 for immediate help.</span>
+                <span class="ticker-item" data-i18n="news">KshatraShield: Safe City Initiative launched. | Report any suspicious activity immediately. | Dial 100 for immediate help.</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        let lastNotifCount = 0;
+
+        async function fetchNotifs() {
+            if (!isLoggedIn()) return;
+            try {
+                console.log("Checking for notifications...");
+                const res = await fetch('/api/complaints/notifications', {
+                    headers: { 'Authorization': `Bearer ${getToken()}` }
+                });
+                if (!res.ok) throw new Error("Fetch failed");
+                const notifs = await res.json();
+                console.log("Notifs received:", notifs.length);
+                
+                const countEl = document.getElementById('notif-count');
+                const listEl = document.getElementById('notif-items');
+                
+                if (notifs.length > 0) {
+                    countEl.innerText = notifs.length;
+                    countEl.style.display = 'block';
+                    listEl.innerHTML = notifs.map(n => `
+                        <div style="padding: 10px 0; border-bottom: 1px solid #30363d; font-size: 0.8rem;">
+                            <p style="margin: 0;">${n.message}</p>
+                            <small style="color: var(--muted-color);">${new Date(n.created_at).toLocaleString()}</small>
+                        </div>
+                    `).join('');
+
+                    // Trigger Virtual SMS for NEW notifications
+                    if (notifs.length > lastNotifCount) {
+                        showSms(notifs[0].message);
+                    }
+                    lastNotifCount = notifs.length;
+                } else {
+                    countEl.style.display = 'none';
+                    listEl.innerHTML = '<p style="text-align: center; color: var(--muted-color); font-size: 0.8rem; padding: 10px;">No new alerts.</p>';
+                }
+            } catch (err) {}
+        }
+
+        function showSms(message) {
+            const sms = document.getElementById('sms-simulator');
+            document.getElementById('sms-message').innerText = message;
+            document.getElementById('sms-time').innerText = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            sms.style.display = 'block';
+            sms.classList.add('animate-pop');
+            // Auto hide after 10s
+            // setTimeout(closeSms, 8000);
+        }
+
+        function closeSms() { document.getElementById('sms-simulator').style.display = 'none'; }
+
+        function toggleNotifs(e) { e.preventDefault(); e.stopPropagation(); const tray = document.getElementById('notif-tray'); tray.style.display = tray.style.display === 'none' ? 'block' : 'none'; }
+        async function clearNotifs() {
+            await fetch('/api/complaints/notifications/clear', { method: 'DELETE', headers: { 'Authorization': `Bearer ${getToken()}` } });
+            lastNotifCount = 0;
+            fetchNotifs();
+        }
+        document.addEventListener('click', () => {
+            const tray = document.getElementById('notif-tray');
+            if (tray) tray.style.display = 'none';
+        });
+        
+        if (isLoggedIn()) {
+            const bell = document.getElementById('notification-bell-li');
+            if (bell) bell.style.display = 'block';
+            fetchNotifs();
+            setInterval(fetchNotifs, 10000); // Polling faster for testing (10s)
+        }
+    </script>
+    <style>
+        @keyframes popIn { 0% { transform: translateY(100px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+        .animate-pop { animation: popIn 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.28); }
+    </style>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

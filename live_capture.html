@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block title %}Live Capture{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div style="max-width: 800px; margin: 40px auto; padding: 40px;" class="glass">
+        <h2 style="text-align: center; color: var(--accent-color); font-size: 2.2rem; margin-bottom: 10px;" data-i18n="live_capture"><i class="fas fa-camera"></i> Live Crime Capture</h2>
+        <p style="text-align: center; color: var(--text-color); margin-bottom: 35px; font-weight: 500;" data-i18n="live_capture_desc">
+            Securely capture and upload real-time evidence directly to KshatraShield.
+        </p>
+
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 25px;">
+            <div id="camera-container" style="width: 100%; max-width: 640px; background: #000; border-radius: 12px; overflow: hidden; position: relative; border: 2px solid var(--border-color); box-shadow: 0 0 20px rgba(0,0,0,0.5);">
+                <video id="video" width="100%" height="auto" autoplay playsinline></video>
+                <canvas id="canvas" style="display: none;"></canvas>
+            </div>
+
+            <div class="feature-grid" style="width: 100%; grid-template-columns: repeat(3, 1fr); margin: 0;">
+                <button id="snap" class="btn btn-primary" title="Capture Photo"><i class="fas fa-camera"></i> <span data-i18n="photo_btn">Photo</span></button>
+                <button id="record-start" class="btn btn-danger" title="Record Video"><i class="fas fa-circle"></i> <span data-i18n="record_btn">Record</span></button>
+                <button id="record-stop" class="btn btn-muted" disabled title="Stop Recording"><i class="fas fa-stop"></i> <span data-i18n="stop_btn">Stop</span></button>
+            </div>
+
+            <div id="preview-container" class="glass" style="width: 100%; padding: 20px; display: none; text-align: center;">
+                <h4 data-i18n="captured_evidence">Captured Evidence</h4>
+                <div id="evidence-preview" style="margin: 15px 0;"></div>
+                <div class="form-group">
+                    <label data-i18n="capture_desc_lbl">Capture Description</label>
+                    <input type="text" id="capture-title" placeholder="e.g. Video of theft in progress" data-i18n="placeholder_capture_title">
+                </div>
+                <div class="form-group">
+                    <label data-i18n="location_auto">Location (Auto-detected)</label>
+                    <input type="text" id="capture-location" placeholder="Detecting..." readonly style="background: var(--secondary-color);" data-i18n="detecting_placeholder">
+                </div>
+                <button id="upload-capture" class="btn btn-success" style="width: 100%;" data-i18n="upload_btn">Upload to Reports</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const video = document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const snap = document.getElementById('snap');
+const recordStart = document.getElementById('record-start');
+const recordStop = document.getElementById('record-stop');
+const evidencePreview = document.getElementById('evidence-preview');
+const previewContainer = document.getElementById('preview-container');
+const uploadBtn = document.getElementById('upload-capture');
+
+let mediaRecorder;
+let recordedChunks = [];
+let capturedBlob = null;
+let captureType = ''; // 'image' or 'video'
+
+// Request Camera Access
+async function startCamera() {
+    // Also start Geolocation
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition((pos) => {
+            document.getElementById('capture-location').value = `${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`;
+        });
+    }
+
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        video.srcObject = stream;
+        
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) recordedChunks.push(event.data);
+        };
+        mediaRecorder.onstop = () => {
+            capturedBlob = new Blob(recordedChunks, { type: 'video/webm' });
+            captureType = 'video';
+            showPreview(URL.createObjectURL(capturedBlob), 'video');
+            recordedChunks = [];
+        };
+    } catch (err) {
+        notify('Camera access denied', 'danger');
+    }
+}
+
+function showPreview(src, type) {
+    previewContainer.style.display = 'block';
+    if (type === 'image') {
+        evidencePreview.innerHTML = `<img src="${src}" style="width: 100%; max-width: 400px; border-radius: 8px;">`;
+    } else {
+        evidencePreview.innerHTML = `<video src="${src}" controls style="width: 100%; max-width: 400px; border-radius: 8px;"></video>`;
+    }
+    window.scrollTo(0, document.body.scrollHeight);
+}
+
+// Snap Photo
+snap.onclick = () => {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    const dataUrl = canvas.toDataURL('image/jpeg');
+    
+    // Convert dataUrl to Blob
+    fetch(dataUrl).then(res => res.blob()).then(blob => {
+        capturedBlob = blob;
+        captureType = 'image';
+        showPreview(dataUrl, 'image');
+    });
+};
+
+// Record Video
+recordStart.onclick = () => {
+    recordedChunks = [];
+    mediaRecorder.start();
+    recordStart.disabled = true;
+    recordStop.disabled = false;
+    recordStart.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Recording...';
+    notify('Recording started...', 'info');
+};
+
+recordStop.onclick = () => {
+    mediaRecorder.stop();
+    recordStart.disabled = false;
+    recordStop.disabled = true;
+    recordStart.innerHTML = '<i class="fas fa-circle"></i> Record';
+    notify('Recording stopped', 'success');
+};
+
+uploadBtn.onclick = async () => {
+    if (!capturedBlob) return;
+
+    const title = document.getElementById('capture-title').value || 'Live Capture - ' + new Date().toLocaleString();
+    const loc = document.getElementById('capture-location').value || 'Location Unavailable';
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('description', 'Live capture uploaded via web interface.');
+    formData.append('location', loc);
+    formData.append('evidence_live', capturedBlob, captureType === 'image' ? 'capture.jpg' : 'recording.webm');
+
+    notify('Uploading capture...', 'info');
+
+    try {
+        const headers = {};
+        if (isLoggedIn()) headers['Authorization'] = `Bearer ${getToken()}`;
+
+        const res = await fetch('/api/complaints/report', {
+            method: 'POST',
+            headers: headers,
+            body: formData
+        });
+
+        if (res.ok) {
+            notify('Evidence uploaded successfully!', 'success');
+            setTimeout(() => window.location.href = '/', 2000);
+        } else {
+            notify('Upload failed', 'danger');
+        }
+    } catch (err) {
+        notify('Connection error', 'danger');
+    }
+};
+
+startCamera();
+</script>
+{% endblock %}

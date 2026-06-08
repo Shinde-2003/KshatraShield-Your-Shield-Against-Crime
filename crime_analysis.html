@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Crime Analysis{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div style="margin: 40px 0; text-align: center;">
+        <h2 data-i18n="analysis">AI-Powered Crime Analysis</h2>
+        <p style="color: var(--muted-color);" data-i18n="feature_analysis_p">Visualizing crime trends and distribution across the city.</p>
+    </div>
+
+    <div class="feature-grid" style="grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));">
+        <div class="glass" style="padding: 30px;">
+            <h3 style="text-align: center;" data-i18n="crime_by_cat">Crime by Category</h3>
+            <canvas id="categoryChart" style="max-height: 400px;"></canvas>
+        </div>
+        <div class="glass" style="padding: 30px;">
+            <h3 style="text-align: center;" data-i18n="priority_dist">Priority Distribution</h3>
+            <canvas id="priorityChart" style="max-height: 400px;"></canvas>
+        </div>
+    </div>
+
+    <div class="glass" style="padding: 40px; margin-top: 20px; text-align: center;">
+        <h3 data-i18n="ai_sentiment">AI Sentiment Activity</h3>
+        <p style="margin-bottom: 20px;" data-i18n="safety_index">Overall City Safety Index: <span style="color: var(--success-color); font-weight: bold;">8.2 / 10 (Steady)</span></p>
+        <div style="width: 100%; height: 10px; background: #30363d; border-radius: 5px; overflow: hidden;">
+            <div style="width: 82%; height: 100%; background: var(--success-color);"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadCharts() {
+    try {
+        // Load Category Stats
+        const catRes = await fetch('/api/analysis/stats');
+        const catData = await catRes.json();
+        
+        const ctx1 = document.getElementById('categoryChart').getContext('2d');
+        new Chart(ctx1, {
+            type: 'pie',
+            data: {
+                labels: catData.categories,
+                datasets: [{
+                    data: catData.counts,
+                    backgroundColor: [
+                        '#58a6ff', '#238636', '#da3633', '#d29922', '#8b949e', '#1f6feb', '#388bfd'
+                    ],
+                    borderWidth: 1,
+                    borderColor: '#30363d'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom', labels: { color: '#c9d1d9' } }
+                }
+            }
+        });
+
+        // Load Priority Stats
+        const priRes = await fetch('/api/analysis/trends/priority');
+        const priData = await priRes.json();
+        
+        const ctx2 = document.getElementById('priorityChart').getContext('2d');
+        new Chart(ctx2, {
+            type: 'bar',
+            data: {
+                labels: priData.labels,
+                datasets: [{
+                    label: 'No. of Complaints',
+                    data: priData.data,
+                    backgroundColor: '#58a6ff',
+                    borderColor: '#388bfd',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: { beginAtZero: true, grid: { color: '#30363d' }, ticks: { color: '#c9d1d9' } },
+                    x: { grid: { display: false }, ticks: { color: '#c9d1d9' } }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    } catch (err) {
+        notify('Failed to load analysis data', 'danger');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', loadCharts);
+</script>
+{% endblock %}
